@@ -1,1 +1,1 @@
-bot: bundle exec ruby hammurabot.rb
+worker: bundle exec ruby hammurabot.rb
