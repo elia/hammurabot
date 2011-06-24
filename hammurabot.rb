@@ -87,8 +87,9 @@ BEGIN {
       config_hash = YAML.load_file(yaml_config_file)
     else
       config_hash = {}
-      ENV.each_pair { |k,v| 
+      ENV.each_pair do |k,v| 
         config_hash[$1.downcase] = v if k =~ /^HAMMURABOT_(.*)$/
+      end
     end
     @config = OpenStruct.new config_hash
   end
