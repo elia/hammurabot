@@ -1,6 +1,7 @@
 # coding: utf-8
 
-room = camp.choose_room!
+camp = Tinder::Campfire.new config.company, :token => config.token
+room = config.room ? camp.find_room_by_name(config.room) : camp.choose_room!
 
 room.listen do |message|
   OpenStruct.new(message).instance_eval do
@@ -65,14 +66,32 @@ BEGIN {
       }
     end
   end
+  class Tinder::Room
+    alias weak_listen listen
+    
+    def listen &block
+      weak_listen(&block)
+    rescue => e
+      puts "#{e.class}: #{e}"
+      retry
+    end
+  end
   
-  config = YAML.load_file File.expand_path('../config.yml', __FILE__)
-  user     = config['user']
-  password = config['password']
-  token    = config['token']
-  company  = config['company']
-  camp = Tinder::Campfire.new company, :token => token
   
+  
+  def config
+    return @config if @config
+    
+    yaml_config_file = File.expand_path('../config.yml', __FILE__)
+    if File.exist?(yaml_config_file)
+      config_hash = YAML.load_file(yaml_config_file)
+    else
+      config_hash = {}
+      ENV.each_pair { |k,v| 
+        config_hash[$1.downcase] = v if k =~ /^HAMMURABOT_(.*)$/
+    end
+    @config = OpenStruct.new config_hash
+  end
   
 }
 
