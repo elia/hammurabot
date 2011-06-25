@@ -10,7 +10,7 @@ room.listen do |message|
     
     case body.to_s
       
-    when /\bhammurabi\:(.*)?/i
+    when /\bhammurabi\s+(.*)?/i
       reply = Hammurabi.find($1)
       mode, reply = :speak, 'we have no law for that' if reply.nil?
       
