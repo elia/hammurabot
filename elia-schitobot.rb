@@ -2,31 +2,39 @@
 
 camp = Tinder::Campfire.new config.company, :token => config.token
 room = config.room ? camp.find_room_by_name(config.room) : camp.choose_room!
+name_regex = /\b#{config.name}\b/i
 
 room.listen do |message|
   OpenStruct.new(message).instance_eval do
-    next if body.nil?
-    mode, reply = :paste, nil
+    next if body.nil? or (user and user[:name] =~ name_regex)
     
-    case body.to_s
+    if body.to_s =~ name_regex
+      reply = "#{user[:name]}: #{PHRASES[rand(PHRASES.size-1)]}"
       
-    when /\bhammurabi\s+(.*)?/i
-      reply = Hammurabi.find($1)
-      mode, reply = :speak, 'we have no law for that' if reply.nil?
+      puts "Got message: #{body}"
+      puts "Replied with: #{reply}"
       
-    when /h?amm?urr?ab[iy]/i
-      reply = Hammurabi.law!
+      Thread.new {
+        room.speak(reply)
+      }
       
-    else replied = false
+      Thread.new {
+        Pony.mail(
+          to:      "#{config.mail_user}@mikamai.com", 
+          from:    "#{config.mail_user}+bot@mikamai.com", 
+          subject: "[#{config.mail_user.upcase}BOT] Mentioned on CampFire by #{user[:name]}", 
+          body:    "Got message: \n#{body}"+
+                   "\n\n\n"+
+                   "Replied with: \n#{reply}"
+        )
+      }
+      
+      
+      $stdout.print reply ? 'E' : '.'
+      $stdout.flush
+      
     end
     
-    if reply
-      room.send(mode, reply)
-      Notify.notify body, reply
-    end
-    
-    $stdout.print reply ? 'H' : '.'
-    $stdout.flush
   end
 end
 
@@ -47,8 +55,8 @@ BEGIN {
   require 'yajl/http_stream'
   require 'notify'
   require 'ostruct'
-  require 'hammurabi'
   require 'yaml'
+  require 'pony'
   
   class Tinder::Campfire
     def choose_room!
@@ -94,7 +102,31 @@ BEGIN {
     @config = OpenStruct.new config_hash
   end
   
+  Pony.options = {
+    via: :smtp, 
+    via_options: {
+      address:        'smtp.gmail.com',
+      port:           587,
+      user_name:      config.mail_user,
+      password:       config.mail_password,
+      authentication: :plain,
+      domain:         'mikamai.com'
+    }
+  }
+
+  PHRASES = %Q{
+    un'attimo
+    un momento che arrivo
+    lol
+    asp
+    sono al telefono
+    un secondo che c'è liz che rompe
+  }.split("\n").map(&:strip)
+
+  Thread.abort_on_exception
+
 }
+
 
 
 

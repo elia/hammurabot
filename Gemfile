@@ -4,4 +4,5 @@ gem 'yajl-ruby'
 gem 'notify'
 gem 'tinder'
 gem 'i18n' # for tinder
-gem 'hammurabi'
+gem 'pony'
+gem 'foreman'
